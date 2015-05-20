@@ -23,7 +23,8 @@ using UnityEditor;
 public static class PhotonNetwork
 {
     /// <summary>Version number of PUN. Also used in GameVersion to separate client version from each other.</summary>
-    public const string versionPUN = "1.51";
+    // public const string versionPUN = "1.51";
+    public static string versionPUN = "1.51";
 
     public static string gameVersion
     {

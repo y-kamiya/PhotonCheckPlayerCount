@@ -1,13 +1,22 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections;
 
 public class NetworkManager : Photon.MonoBehaviour {
 
-    public bool JoinRoom = true;
+    public bool NotJoinRoom = false;
+    public string TargetAppVersion = "1.1";
+    public string TargetAppVersionPun = "1.25";
+    public string RoomName = "room1";
+    public string PlayerName = "defaultPlayer";
+    public string EncryptedString;
 
     void Awake () {
-        //マスターサーバーへ接続
-        PhotonNetwork.ConnectUsingSettings("v0.1");
+        PhotonNetwork.ConnectUsingSettings(TargetAppVersion);
+        if (!String.IsNullOrEmpty(TargetAppVersionPun))
+        {
+            PhotonNetwork.versionPUN = TargetAppVersionPun;
+        }
     }
  
     void Update () {
@@ -15,36 +24,44 @@ public class NetworkManager : Photon.MonoBehaviour {
   
     //ロビー参加成功時のコールバック
     void OnJoinedLobby() {
-        //ランダムにルームへ参加
-        RoomInfo[] roomList = PhotonNetwork.GetRoomList();
-        foreach(RoomInfo info in roomList)
+        if (!this.NotJoinRoom)
         {
-            Debug.Log("player count of " + info.name + ": " + info.playerCount.ToString());
+            PhotonNetwork.AuthValues = new AuthenticationValues();
+            PhotonNetwork.AuthValues.SetAuthParameters(this.PlayerName, this.EncryptedString);
+            PhotonNetwork.playerName = this.PlayerName;
+
+            PhotonNetwork.JoinOrCreateRoom(this.RoomName, new RoomOptions(), new TypedLobby());
         }
-        if (this.JoinRoom)
-        {
-            PhotonNetwork.JoinRandomRoom();
-        }
-    }
- 
-    //ルーム参加失敗時のコールバック
-    void OnPhotonRandomJoinFailed() {
-        Debug.Log("ルームへの参加に失敗しました");
-        PhotonNetwork.CreateRoom("room1");
     }
  
     //ルーム参加成功時のコールバック
     void OnJoinedRoom() {
         Debug.Log("ルームへの参加に成功しました");
+        // PhotonNetwork.room.open = false;
+        // Debug.Log(PhotonNetwork.room.visible);
+        
     }
  
     void OnGUI() {
         //サーバーとの接続状態をGUIへ表示
         GUILayout.Label(PhotonNetwork.connectionStateDetailed.ToString());
-        RoomInfo[] roomList = PhotonNetwork.GetRoomList();
-        foreach(RoomInfo info in roomList)
+
+        if (PhotonNetwork.connectionStateDetailed == PeerState.JoinedLobby)
         {
-            GUILayout.Label("player count of " + info.name + ": " + info.playerCount.ToString());
+            RoomInfo[] roomList = PhotonNetwork.GetRoomList();
+            if (roomList.Length == 0)
+            {
+                GUILayout.Label("there is no room");
+            }
+            foreach(RoomInfo info in roomList)
+            {
+                GUILayout.Label("player count of " + info.name + ": " + info.playerCount.ToString());
+            }
+        } 
+        else if (PhotonNetwork.connectionStateDetailed == PeerState.Joined)
+        {
+            GUILayout.Label("player count in room( " + PhotonNetwork.room.ToString() + "): " + PhotonNetwork.playerList.Length.ToString());
         }
+
     }
 }
